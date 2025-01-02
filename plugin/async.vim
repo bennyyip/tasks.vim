@@ -29,6 +29,8 @@ let g:loaded_async = 1
 " For Make/Grep commands, with BANG will not jump to the first error/match, and
 " will not open the qfix window.
 
+let g:async_default_opts = {}
+
 command! -nargs=1 -bang AsyncBuf  call async#cmd(<q-args>, 'buffer', {'writelogs': <bang>0})
 command! -nargs=1 -bang AsyncCmd  call async#cmd(<q-args>, 'cmdline', {'writelogs': <bang>0})
 command! -nargs=1 -bang Async     call async#cmd(<q-args>, 'headless', {'writelogs': <bang>0})

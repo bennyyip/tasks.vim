@@ -386,7 +386,10 @@ option prevents it and leaves them running after vim has quitted.
 
 |noenv|: don't set any environmental variable.
 
-
+Overwrite default options:
+>
+    call extend(g:async_default_opts, {'openqf': 1, 'nojump': 1})
+<
 
 ==============================================================================
 vim:tw=78:ts=2:sw=2:ft=help:norl:et:fen:fdl=0:
