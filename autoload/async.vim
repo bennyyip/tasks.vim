@@ -387,6 +387,10 @@ fun! s:cb_quickfix(job) abort
 
   elseif !status && empty(job.err)
     echo "Success:" job.title
+    " open quickfix even job is successful
+    if job.openqf && canopen
+      call s:open_qfix(job)
+    endif
 
   elseif failure
     call s:echo(['Exit status: '. status, 'Command: '. job.title]
