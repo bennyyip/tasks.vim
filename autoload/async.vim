@@ -657,8 +657,9 @@ endfun "}}}
 "  'unlisted'    don't list in Jobs!          default: 0
 "  'hidden'      both of the above            default: 0
 
+
 fun! s:default_opts()
-  return {
+  return extend({
         \ 'winid': win_getid(),
         \ 'bufnr': bufnr(''),
         \ 'wd': getcwd(),
@@ -686,7 +687,7 @@ fun! s:default_opts()
         \ 'discard': 0,
         \ 'unlisted': 0,
         \ 'hidden': 0,
-        \}
+        \}, g:async_default_opts)
 endfun
 
 ""
