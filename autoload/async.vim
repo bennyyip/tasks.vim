@@ -253,7 +253,11 @@ endfun
 ""
 fun! s:buf_out(job, pos, title) abort
   let job = a:job
-  exe a:pos len(job.out) . 'new'
+  if a:pos =~# 'vertical'
+    exe a:pos . ' new'
+  else
+    exe a:pos len(job.out) . 'new'
+  endif
   setlocal bt=nofile bh=wipe noswf nobl
 
   if get(job, 'ft', '') != ''
