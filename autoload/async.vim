@@ -333,15 +333,17 @@ fun! s:cb_quickfix(job) abort
   let cxpr .= appending ? 'add' : job.nojump ? 'get' : ''
   let cxpr .= 'expr'
 
-  exe 'silent doautocmd QuickFixCmdPre' job.qfautocmd
-  exe cxpr 'job.out + job.err'
+  if !(!status && empty(job.err) && empty(job.out))
+    exe 'silent doautocmd QuickFixCmdPre' job.qfautocmd
+    exe cxpr 'job.out + job.err'
 
-  if job.locl
-    call setloclist(job.winid, [], 'r', {'title': job.title})
-  else
-    call setqflist([], 'r', {'title': job.title})
+    if job.locl
+      call setloclist(job.winid, [], 'r', {'title': job.title})
+    else
+      call setqflist([], 'r', {'title': job.title})
+    endif
+    exe 'silent doautocmd QuickFixCmdPost' job.qfautocmd
   endif
-  exe 'silent doautocmd QuickFixCmdPost' job.qfautocmd
 
   " restore errorformat values
   let &l:errorformat = bvar
@@ -391,10 +393,6 @@ fun! s:cb_quickfix(job) abort
 
   elseif !status && empty(job.err)
     echo "Success:" job.title
-    " open quickfix even job is successful
-    if job.openqf && canopen
-      call s:open_qfix(job)
-    endif
 
   elseif failure
     call s:echo(['Exit status: '. status, 'Command: '. job.title]
