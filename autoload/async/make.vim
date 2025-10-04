@@ -3,11 +3,13 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 if executable('awk') && !has('win32')
-  let s:MakeCompletionCmd =  "make -qp | awk -F':' "
-              \ .. "'/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ {split($1, targets, / /); "
-              \ .. "for (target in targets) if (targets[target] != \"Makefile\""
-              \ .. "&& !seen[targets[target]]++) print targets[target]}'"
+  " let s:MakeCompletionCmd =  "make -qp | awk -F':' "
+  "             \ .. "'/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ {split($1, targets, / /); "
+  "             \ .. "for (target in targets) if (targets[target] != \"Makefile\""
+  "             \ .. "&& !seen[targets[target]]++) print targets[target]}'"
 
+  " from habamax
+  let s:MakeCompletionCmd = "make -npq : 2> /dev/null | awk -v RS= -F: '$1 ~ /^[^#%.]+$/ { print $1 }' | sort -u"
 endif
 
 ""=============================================================================
@@ -28,6 +30,9 @@ if exists('s:MakeCompletionCmd')
         return []
     endif
     let targets = systemlist(s:MakeCompletionCmd)
+    if a:ArgLead == ""
+      return targets
+    endif
     return filter(targets, 'v:val =~ "^' .. a:ArgLead .. '" && v:val != "makefile"')
   endfunction
 else
