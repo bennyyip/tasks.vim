@@ -7,8 +7,8 @@
 " ========================================================================///
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Jobs are stored in a global dictionary. To support both vim and nvim,
-" incremental ids are used: for each new job, a new id is added to the global
+" Jobs are stored in a global dictionary.
+" Incremental ids are used: for each new job, a new id is added to the global
 " dictionary. Parallel jobs are possible. For each entry, values are:
 "
 "  'id': the id
@@ -25,8 +25,7 @@
 " stored in the global dictionary, and that can be used later in custom
 " callbacks that must be provided with the user optional dictionary.
 " While the user options can contain any field, the job options dict is
-" restricted to supported fields (because vim doesn't accept extra fields,
-" contrary to nvim).
+" restricted to supported fields.
 "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -137,13 +136,8 @@ endfun "}}}
 fun! async#stop(id, ...) abort
   " {{{1
   for id in (a:id ? [a:id] : keys(g:async_jobs))
-    if has('nvim')
-      let job = str2nr(g:async_jobs[id].job)
-      call jobstop(job)
-    else
-      let job = g:async_jobs[id].job
-      call job_stop(job, a:0 ? 'kill' : 'term')
-    endif
+    let job = g:async_jobs[id].job
+    call job_stop(job, a:0 ? 'kill' : 'term')
   endfor
   if a:id
     return a:id
@@ -166,7 +160,7 @@ fun! async#list(finished) abort
   for id in keys(g:async_jobs)
     try
       let J = g:async_jobs[id]
-      let pid = has('nvim') ? jobpid(str2nr(J.job)) : job_info(J.job).process
+      let pid = job_info(J.job).process
       call add(jobs, printf('%-4s%-9s%-8s%-'.limit.'s', id, pid, J.status, J.title))
     catch
       call async#remove_job(J.job)
@@ -489,46 +483,6 @@ fun! s:cb_cmdline(job) abort
 endfun "}}}
 
 
-""=============================================================================
-" Function: s:cb_headless
-" Nothing to do here.
-" @param job: the job object
-""=============================================================================
-fun! s:cb_headless(job)
-  " {{{1
-  return
-endfun "}}}
-
-
-""=============================================================================
-" Function: s:cb_terminal
-" Set the terminal window statusline to reflect the exit status.
-" @param job: the job object
-""=============================================================================
-fun! s:cb_terminal(job) abort
-  "{{{1
-  if !has('nvim')
-    let win = bufwinnr(a:job.termbuf)
-    if win > 0
-      let hl = a:job.status ? '%#ErrorMsg#' : '%#DiffAdd#'
-      call setwinvar(win, '&statusline', hl . 'Exit status: ' . a:job.status)
-    endif
-  endif
-endfun "}}}
-
-
-""=============================================================================
-" Function: s:cb_external
-" Not much to do here... there's nothing useful that can be saved.
-" @param job:    the job object
-""=============================================================================
-fun! s:cb_external(job) abort
-  "{{{1
-  return
-endfun "}}}
-
-
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                                                             "
 "                               Public helpers                                "
@@ -759,8 +713,7 @@ fun! s:make_cmd(cmd, mode, env) abort
   let [cmd, sh, flag] = [a:cmd, &shell, &shellcmdflag]
 
   if a:mode == 'terminal'
-    return s:is_windows ? s:tempscript(cmd, a:env, 0) :
-          \has('nvim')  ? [sh, flag, s:get_env(a:env) . cmd]
+    return s:is_windows ? s:tempscript(cmd, a:env, 0)
           \             : [sh, flag, cmd]
 
   elseif a:mode == 'external'
@@ -849,7 +802,7 @@ fun! s:job_start(cmd, opts, useropts) abort
   if a:useropts.mode == 'terminal'
     return s:term_start(a:cmd, a:opts, a:useropts)
   else
-    return has('nvim') ? jobstart(a:cmd, a:opts) : job_start(a:cmd, a:opts)
+    return job_start(a:cmd, a:opts)
   endif
 endfun
 
@@ -857,19 +810,12 @@ endfun
 " s:term_start: start job in an embedded terminal
 ""
 fun! s:term_start(cmd, opts, useropts) abort
-  if has('nvim')
-    new +setlocal\ bt=nofile\ bh=wipe\ noswf\ nobl
-  endif
-  let job = has('nvim') ? termopen(a:cmd, a:opts)
-        \               : term_getjob(term_start(a:cmd, a:opts))
+  let job = term_getjob(term_start(a:cmd, a:opts))
   let a:useropts.termbuf = bufnr('')
   let pos = get(a:useropts, 'pos', '')
   if index(['top', 'bottom', 'left', 'right', 'vertical'], pos) >= 0
     exe 'wincmd' {'top': 'K', 'bottom': 'J', 'left': 'H', 'right': 'L',
           \       'vertical': &splitright ? 'L' : 'H'}[pos]
-  endif
-  if has('nvim') && get(a:useropts, 'startinsert', 1)
-    startinsert
   endif
   return job
 endfun
@@ -881,25 +827,14 @@ endfun
 ""
 fun! s:job_opts(useropts) abort
   let Callback = get(a:useropts, 'on_exit', function('s:cb_' . a:useropts.mode))
-  if has('nvim')
-    let opts = {
-          \ "on_exit": function('async#finish', [Callback]),
-          \ 'on_stdout': function('s:nvim_out'),
-          \ 'on_stderr': function('s:nvim_err'),
-          \ 'stdout_buffered' : 1,
-          \ 'stderr_buffered' : 1,
-          \ 'detach': a:useropts.noquit,
-          \}
-  else
-    let opts = {
-          \ "exit_cb": function('async#finish', [Callback]),
-          \ 'out_cb': function('s:vim_out'),
-          \ 'err_cb': function('s:vim_err'),
-          \ 'in_io': a:useropts.grep ? 'null' : 'pipe',
-          \ 'err_io': 'pipe',
-          \ 'stoponexit': a:useropts.noquit ? '' : 'term',
-          \}
-  endif
+  let opts = {
+        \ "exit_cb": function('async#finish', [Callback]),
+        \ 'out_cb': function('s:vim_out'),
+        \ 'err_cb': function('s:vim_err'),
+        \ 'in_io': a:useropts.grep ? 'null' : 'pipe',
+        \ 'err_io': 'pipe',
+        \ 'stoponexit': a:useropts.noquit ? '' : 'term',
+        \}
   return opts
 endfun
 
@@ -934,20 +869,6 @@ fun! s:get_job_with_channel(channel) abort
 endfun
 
 " Output handlers {{{1
-fun! s:nvim_out(job, out, ...) abort
-  if a:out != ['']
-    let job = s:get_job(a:job)
-    let job['out'] = map(a:out, 'substitute(v:val, ''\r'', "","")')
-  endif
-endfun
-
-fun! s:nvim_err(job, err, ...) abort
-  if a:err != ['']
-    let job = s:get_job(a:job)
-    let job['err'] = map(a:err, 'substitute(v:val, ''\r'', "","")')
-  endif
-endfun
-
 fun! s:vim_out(channel, line) abort
   let job = s:get_job_with_channel(a:channel)
   call add(job['out'], a:line)
@@ -1012,7 +933,7 @@ endfun
 
 " Return the PID for the job {{{1
 fun! s:pid(job) abort
-  return has('nvim') ? jobpid(a:job) : job_info(a:job).process
+  return job_info(a:job).process
 endfun
 
 " Get the position for buffer/terminal mode {{{1
