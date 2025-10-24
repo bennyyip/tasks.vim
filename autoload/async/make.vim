@@ -3,13 +3,13 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 if executable('awk') && !has('win32')
-  " let s:MakeCompletionCmd =  "make -qp | awk -F':' "
-  "             \ .. "'/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ {split($1, targets, / /); "
-  "             \ .. "for (target in targets) if (targets[target] != \"Makefile\""
-  "             \ .. "&& !seen[targets[target]]++) print targets[target]}'"
+  let s:MakeCompletionCmd =  "make -qp | awk -F':' "
+              \ .. "'/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ {split($1, targets, / /); "
+              \ .. "for (target in targets) if (targets[target] != \"Makefile\""
+              \ .. "&& !seen[targets[target]]++) print targets[target]}'"
 
   " from habamax
-  let s:MakeCompletionCmd = "make -npq : 2> /dev/null | awk -v RS= -F: '$1 ~ /^[^#%.]+$/ { print $1 }' | sort -u"
+  " let s:MakeCompletionCmd = "make -npq : 2> /dev/null | awk -v RS= -F: '$1 ~ /^[^#%.]+$/ { print $1 }' | sort -u"
 endif
 
 ""=============================================================================
@@ -21,7 +21,7 @@ endif
 if exists('s:MakeCompletionCmd')
   " From https://dev.to/pbnj/how-to-get-make-target-tab-completion-in-vim-4mj1
   function! async#make#complete(ArgLead, CmdLine, CursorPos) abort
-    if &makeprg !=# 'make'
+    if &makeprg !~# '^make'
       return []
     endif
     " test if 'make' can actually do anything here
