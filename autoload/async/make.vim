@@ -38,7 +38,7 @@ if exists('s:MakeCompletionCmd')
 else
   " From https://github.com/jiangyinzuo/vimrc/commit/29a7f3f4686c4ea8246c2f149f698fd01d7cdba4
   function! async#make#complete(ArgLead, CmdLine, CursorPos) abort
-    if &makeprg !=# 'make'
+    if &makeprg !~# '^make'
       return []
     endif
     let makefiles = glob('[Mm]akefile', 1, 1) + glob('GNUmakefile', 1, 1) +
@@ -52,7 +52,7 @@ else
     let targets = []
 
     for line in lines
-      if line =~ '^[a-zA-Z0-9._-]\+:'
+      if line =~ '^[a-zA-Z][a-zA-Z0-9._-]*:'
         let target = matchstr(line, '^[a-zA-Z0-9._-]\+')
         if target =~ '^' .. a:ArgLead
           call add(targets, target)
