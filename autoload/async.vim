@@ -483,6 +483,39 @@ fun! s:cb_cmdline(job) abort
 endfun "}}}
 
 
+""=============================================================================
+" Function: s:cb_headless
+" Nothing to do here.
+" @param job: the job object
+""=============================================================================
+fun! s:cb_headless(job)
+  " {{{1
+  return
+endfun "}}}
+
+
+""=============================================================================
+" Function: s:cb_terminal
+" Set the terminal window statusline to reflect the exit status.
+" @param job: the job object
+""=============================================================================
+fun! s:cb_terminal(job) abort
+  "{{{1
+endfun "}}}
+
+
+""=============================================================================
+" Function: s:cb_external
+" Not much to do here... there's nothing useful that can be saved.
+" @param job:    the job object
+""=============================================================================
+fun! s:cb_external(job) abort
+  "{{{1
+  return
+endfun "}}}
+
+
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "                                                                             "
 "                               Public helpers                                "
